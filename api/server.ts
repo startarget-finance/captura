@@ -1,5 +1,18 @@
-// This file is used by Vercel to handle SSR requests
-// @ts-ignore
-import { reqHandler } from '../dist/captura/server/server.mjs';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default reqHandler;
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    // Dynamic import after build
+    const serverModule = await import('../dist/captura/server/server.mjs');
+    const { reqHandler } = serverModule;
+    
+    if (reqHandler) {
+      return reqHandler(req as any, res as any);
+    } else {
+      res.status(500).send('Server handler not found');
+    }
+  } catch (error) {
+    console.error('Error in server handler:', error);
+    res.status(500).send('Internal server error');
+  }
+}
